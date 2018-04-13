@@ -3,9 +3,9 @@
 //
 #include "gtest/gtest.h"
 
-#include "winnowing.hpp"
+#include "winnowing.h"
 #include <vector>
-#include <winnowing/winnowing.hpp>
+#include <winnowing/winnowing.h>
 
 using namespace std;
 

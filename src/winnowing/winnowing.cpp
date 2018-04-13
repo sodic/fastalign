@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <unordered_map>
-#include "winnowing.hpp"
+#include "winnowing.h"
 
 using namespace std;
 
@@ -307,8 +307,6 @@ namespace winnowing{
 
         delete[] hash_buffer;
         delete[] r_hash_buffer;
-
-        return;
     }
 
     /**

@@ -42,6 +42,7 @@ add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src
 add_subdirectory(vendor/bioparser EXCLUDE_FROM_ALL)
 add_subdirectory(src/winnowing)
 add_subdirectory(src/FASTARead)
+add_subdirectory(src/mapper)
 add_subdirectory(tests)
 
 
