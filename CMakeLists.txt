@@ -41,9 +41,10 @@ add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src
 
 add_subdirectory(vendor/bioparser EXCLUDE_FROM_ALL)
 add_subdirectory(src/winnowing)
+add_subdirectory(src/FASTARead)
 add_subdirectory(tests)
 
 
-set(SOURCE_FILES main.cpp)
+set(SOURCE_FILES src/main.cpp)
 add_executable(zavrsni ${SOURCE_FILES})
-target_link_libraries(zavrsni bioparser winnowing)
+target_link_libraries(zavrsni bioparser winnowing FASTARead)
