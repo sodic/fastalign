@@ -17,7 +17,7 @@ namespace winnowing {
 
     typedef struct {
         minhash_t hash;
-        int32_t index;
+        uint32_t index;
     } minimizer;
 
     void compute_minimizers(const char *seq,

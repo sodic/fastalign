@@ -15,11 +15,25 @@ namespace mapper {
         int32_t end;
     } region;
 
-    void find_candidates(const char *readA,
+    typedef struct{
+        uint32_t position;
+        winnowing::minhash_t jaccard;
+    } estimate;
+
+    void find_candidates(std::vector<winnowing::minimizer>& A_minimizers,
                          uint32_t lengthA,
-                         std::unordered_map<winnowing::minhash_t, std::vector<int32_t>> lookup_map,
+                         std::unordered_map<winnowing::minhash_t, std::vector<int32_t>> &lookup_table,
                          uint32_t s,
-                         double tau);
+                         double tau,
+                         std::vector<region> &candidates);
+
+    void compute_estimates(std::vector<winnowing::minimizer> &ref_minimizers,
+                           std::vector<winnowing::minimizer> &query_minimizers,
+                           uint32_t lengthA,
+                           std::vector<region> &candidates,
+                           uint32_t s,
+                           double tau,
+                           std::vector<estimate> estimates);
 }
 
 #endif //ZAVRSNI_MAPPER_H

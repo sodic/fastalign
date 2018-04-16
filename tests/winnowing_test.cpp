@@ -18,7 +18,7 @@ namespace tests {
                                            2792028467992890898, 5950097892632296567, 366086328681050843,
                                            2127701371075312023, 1761781652765685196, 1464323644466701313,
                                            732172425433867594};
-        int32_t positions[10] ={3, -4, 9, -10, 14, 17, 21, -23, 24, 29};
+        int32_t positions[10] ={3, 4, 9, 10, 14, 17, 21, 23, 24, 29};
         for (int i = 0; i < minimizers.size(); i++) {
             ASSERT_EQ(minimizers[i].hash, hashes[i]);
             ASSERT_EQ(minimizers[i].index, positions[i]);

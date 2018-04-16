@@ -226,7 +226,7 @@ namespace winnowing{
         uint64_t last_min_hash = UINT64_MAX;
         int64_t last_min_position = -1;
 
-        for (int32_t i = 0; i < min_l_pred; i++) {
+        for (uint32_t i = 0; i < min_l_pred; i++) {
             uint64_t u;
             uint64_t v;
 
@@ -245,15 +245,15 @@ namespace winnowing{
                 }
 
                 else if(u > v && v <= last_min_hash) {
-                    minimizers.emplace_back((minimizer) {v, -(i + w - 1)});
-                    last_min_position = -(i + w - 1);
+                    minimizers.emplace_back((minimizer) {v, (i + w - 1)});
+                    last_min_position = (i + w - 1);
                     last_min_hash = v;
                 }
             }
             else {
                 uint64_t m = UINT64_MAX;
 
-                int32_t *min_positions = new int32_t[w];
+                uint32_t *min_positions = new uint32_t[w];
                 uint16_t min_pos_size = 0;
                 for (int j = 0; j < w; j++) {
                     u = hash_buffer[(i + j) % w];
@@ -281,7 +281,7 @@ namespace winnowing{
                     }
 
                     else if(v == m){
-                        min_positions[min_pos_size++] = -(i + j);
+                        min_positions[min_pos_size++] = (i + j);
                     }
                 }
 
