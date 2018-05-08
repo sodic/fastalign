@@ -14,17 +14,17 @@
 
 namespace mapper {
 
-    void find_candidates(std::vector<winnowing::minimizer>& A_minimizers,
-                         uint32_t lengthA,
+    void find_candidates(std::vector<winnowing::minimizer>& query_minimizers,
+                         uint32_t query_length,
                          std::unordered_map<winnowing::minhash_t, std::vector<int32_t>> &lookup_table,
                          uint32_t s,
                          double tau,
                          std::vector<region> &candidates) {
         uint32_t m = (uint32_t) ceil(tau * s);
 
-        std::vector<int32_t> positions;
+        std::vector<int32_t> positions;         // the array L
 
-        for (auto &minimizer : A_minimizers) {
+        for (auto &minimizer : query_minimizers) {
             auto matches = lookup_table.find(minimizer.hash);
             if (matches == lookup_table.end()) {
                 continue;
@@ -35,25 +35,26 @@ namespace mapper {
         }
 
         std::sort(positions.begin(), positions.end());
+
         int total_positions = (int) positions.size();
-        for (int i = 0; i < total_positions - m; ++i) {
+        for (int i = 0; i <= total_positions - m; ++i) {
             int j = i + m - 1;
-            if (positions[j] - positions[i] < lengthA) {
-                candidates.emplace_back((region) {positions[j] - lengthA + 1, positions[i]});
+            if (positions[j] - positions[i] < query_length) {
+                candidates.emplace_back((region) {positions[j] - query_length + 1, positions[i]});
             }
         }
 
     }
 
-    void init_L(std::map<winnowing::minhash_t, bool>& L,
+    void init_L(std::map<winnowing::minhash_t, int32_t >& L,
                 std::vector<winnowing::minimizer> &minimizers){
         for(auto &minimizer : minimizers){
-            L[minimizer.hash] = false;
+            L[minimizer.hash] = 0;
         }
     }
 
-    winnowing::minhash_t solve_jaccard(std::map<winnowing::minhash_t, bool> L, uint32_t s){
-        winnowing::minhash_t shared_sketch = 0
+    winnowing::minhash_t solve_jaccard(const std::map<winnowing::minhash_t, int32_t > &L, uint32_t s){
+        winnowing::minhash_t shared_sketch = 0;
         for(uint32_t i = 0; i < s; i++){
             shared_sketch += L[i];
         }
@@ -62,7 +63,7 @@ namespace mapper {
 
     void remove_from_map(uint32_t start,
                          uint32_t end,
-                         std::map<winnowing::minhash_t, bool> &L,
+                         std::map<winnowing::minhash_t, int32_t > &L,
                          std::vector<winnowing::minimizer> &minimizers){
         int i = 0;
         while(minimizers[i].index < start){
@@ -77,7 +78,7 @@ namespace mapper {
 
     void insert_into_map(uint32_t start,
                          uint32_t end,
-                         std::map<winnowing::minhash_t, bool> &L,
+                         std::map<winnowing::minhash_t, int32_t > &L,
                          std::vector<winnowing::minimizer> &minimizers){
         int i = 0;
         while(minimizers[i].index < start){
@@ -85,7 +86,7 @@ namespace mapper {
         }
 
         while(minimizers[i].index < end){
-            L[minimizers[i].hash] = true;
+            L[minimizers[i].hash] = L.count(minimizers[i].hash) ? 1 : 0;
         }
     }
 
@@ -93,27 +94,34 @@ namespace mapper {
 
     void compute_estimates(std::vector<winnowing::minimizer> &ref_minimizers,
                            std::vector<winnowing::minimizer> &query_minimizers,
-                           uint32_t lengthA,
+                           uint32_t query_length,
                            std::vector<region> &candidates,
                            uint32_t s,
                            double tau,
-                           std::vector<estimate> estimates){
+                           std::vector<estimate> &estimates){
         for (auto &candidate : candidates) {
             uint32_t  i = candidate.start;
-            uint32_t  j = candidate.start + lengthA;
-            std::map<winnowing::minhash_t, bool> L;
-            init_L(L, query_minimizers);
+            uint32_t  j = candidate.start + query_length;
+
+            std::map<winnowing::minhash_t, int32_t > L;
+            init_L(L, query_minimizers);                // treba ih i za ostale opet postavit na nulu, ili?
+            insert_into_map(i, j, L, ref_minimizers);
+
             winnowing::minhash_t J = solve_jaccard(L, s);
             if (J >= tau){
                 estimates.push_back((estimate) {position: i, jaccard: J});
             }
+
             while(i <= candidate.end){
+                L.erase(i);
                 remove_from_map(i, i+1, L, ref_minimizers);
                 insert_into_map(j, j + 1, L, ref_minimizers);
+
                 J = solve_jaccard(L, s);
                 if (J >= tau){
                     estimates.push_back((estimate) {position: i, jaccard: J});
                 }
+
                 i++;
                 j++;
             }

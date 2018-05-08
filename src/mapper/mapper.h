@@ -11,8 +11,8 @@
 namespace mapper {
 
     typedef struct{
-        int32_t start;
-        int32_t end;
+        uint32_t start;
+        uint32_t end;
     } region;
 
     typedef struct{
@@ -20,8 +20,8 @@ namespace mapper {
         winnowing::minhash_t jaccard;
     } estimate;
 
-    void find_candidates(std::vector<winnowing::minimizer>& A_minimizers,
-                         uint32_t lengthA,
+    void find_candidates(std::vector<winnowing::minimizer>& query_minimizers,
+                         uint32_t query_length,
                          std::unordered_map<winnowing::minhash_t, std::vector<int32_t>> &lookup_table,
                          uint32_t s,
                          double tau,
@@ -29,7 +29,7 @@ namespace mapper {
 
     void compute_estimates(std::vector<winnowing::minimizer> &ref_minimizers,
                            std::vector<winnowing::minimizer> &query_minimizers,
-                           uint32_t lengthA,
+                           uint32_t query_length,
                            std::vector<region> &candidates,
                            uint32_t s,
                            double tau,
