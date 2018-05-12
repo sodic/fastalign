@@ -22,14 +22,14 @@ namespace mapper {
                          std::vector<region> &candidates) {
         uint32_t m = (uint32_t) ceil(tau * s);
 
-        std::vector<int32_t> positions;         // the array L
+        std::vector<uint32_t> positions;         // the array L
 
         for (auto &minimizer : query_minimizers) {
             auto matches = lookup_table.find(minimizer.hash);
             if (matches == lookup_table.end()) {
                 continue;
             }
-            for (int32_t pos : matches->second) {
+            for (uint32_t pos : matches->second) {
                 positions.push_back(pos);
             }
         }
@@ -39,12 +39,30 @@ namespace mapper {
         int total_positions = (int) positions.size();
         for (int i = 0; i <= total_positions - m; ++i) {
             int j = i + m - 1;
-            if (positions[j] - positions[i] < query_length) {
-                candidates.emplace_back((region) {positions[j] - query_length + 1, positions[i]});
-            }
-        }
 
+            // check if consecutive hits are close enough
+            if (positions[j] - positions[i] < query_length) {
+
+                region candidate = {
+                        start: std::max(0u, positions[j] - query_length + 1),
+                        end: positions[i]
+                };
+
+                //check overlap with the previous candidate
+                auto prev_it = candidates.end();
+                prev_it--;
+
+                if (!candidates.empty() && prev_it->end >= candidate.start) {
+                    // if there is an overlap, extend the previous candidate
+                    prev_it->end = std::max(candidate.end, prev_it->end);
+                } else {
+                    candidates.push_back(candidate);
+                }
+            }
+
+        }
     }
+
 
     void init_L(std::map<winnowing::minhash_t, matchInfo> &L,
                 std::vector<winnowing::minimizer> &minimizers){
