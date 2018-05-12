@@ -4,15 +4,13 @@
 #include "gtest/gtest.h"
 
 #include "winnowing.h"
-#include <vector>
-#include <winnowing/winnowing.h>
 
 using namespace std;
 
 namespace tests {
     TEST(IndexingTest, WorkingProperly) {
         vector<winnowing::minimizer> minimizers;
-        unordered_map<winnowing::minhash_t, vector<int32_t>> lookup_table;
+        unordered_map<winnowing::minhash_t, vector<uint32_t>> lookup_table;
         winnowing::index_sequence("ATTCTAGGTACGTACCGATGCAAGTGACGTAGCT", 34, 5, 3, minimizers, lookup_table);
         winnowing::minhash_t hashes[10] = {732172425433867594, 732172425433867594, 2792028467992890898,
                                            2792028467992890898, 5950097892632296567, 366086328681050843,

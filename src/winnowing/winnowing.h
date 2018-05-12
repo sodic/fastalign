@@ -18,6 +18,7 @@ namespace winnowing {
     typedef struct {
         minhash_t hash;
         uint32_t index;
+        int32_t strand;
     } minimizer;
 
     void compute_minimizers(const char *seq,
@@ -26,13 +27,22 @@ namespace winnowing {
                             uint32_t k,
                             std::vector<minimizer> &minimizers);
 
+    void compute_minimizers(const char *seq,
+                            uint32_t seq_l,
+                            std::vector<minimizer> &minimizers);
+
 
     void index_sequence(const char *sequence,
                         uint32_t sequence_l,
                         uint32_t w,
                         uint32_t k,
                         std::vector<winnowing::minimizer> &minimizers,
-                        std::unordered_map<minhash_t, std::vector<std::int32_t >> &lookup_table);
+                        std::unordered_map<minhash_t, std::vector<std::uint32_t>> &lookup_table);
+
+    void index_sequence(const char *sequence,
+                        uint32_t sequence_l,
+                        std::vector<winnowing::minimizer> &minimizers,
+                        std::unordered_map<minhash_t, std::vector<std::uint32_t>> &lookup_table);
 
 }
 

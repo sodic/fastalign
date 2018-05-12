@@ -16,7 +16,7 @@ namespace mapper {
 
     void find_candidates(std::vector<winnowing::minimizer>& query_minimizers,
                          uint32_t query_length,
-                         std::unordered_map<winnowing::minhash_t, std::vector<int32_t>> &lookup_table,
+                         std::unordered_map<winnowing::minhash_t, std::vector<uint32_t>> &lookup_table,
                          uint32_t s,
                          double tau,
                          std::vector<region> &candidates) {
@@ -46,24 +46,28 @@ namespace mapper {
 
     }
 
-    void init_L(std::map<winnowing::minhash_t, int32_t >& L,
+    void init_L(std::map<winnowing::minhash_t, matchInfo> &L,
                 std::vector<winnowing::minimizer> &minimizers){
         for(auto &minimizer : minimizers){
-            L[minimizer.hash] = 0;
+            L[minimizer.hash] = (matchInfo) {
+                    mutual: 0,
+                    strand: minimizer.strand
+            };
         }
     }
 
-    winnowing::minhash_t solve_jaccard(const std::map<winnowing::minhash_t, int32_t > &L, uint32_t s){
-        winnowing::minhash_t shared_sketch = 0;
+    uint32_t solve_jaccard(const std::map<winnowing::minhash_t, matchInfo> &L, uint32_t s) {
+        uint32_t shared_sketch = 0;
         for(uint32_t i = 0; i < s; i++){
-            shared_sketch += L[i];
+            shared_sketch += L[i].mutual;
         }
         return shared_sketch/s;
     }
 
+
     void remove_from_map(uint32_t start,
                          uint32_t end,
-                         std::map<winnowing::minhash_t, int32_t > &L,
+                         std::map<winnowing::minhash_t, matchInfo> &L,
                          std::vector<winnowing::minimizer> &minimizers){
         int i = 0;
         while(minimizers[i].index < start){
@@ -78,7 +82,7 @@ namespace mapper {
 
     void insert_into_map(uint32_t start,
                          uint32_t end,
-                         std::map<winnowing::minhash_t, int32_t > &L,
+                         std::map<winnowing::minhash_t, matchInfo> &L,
                          std::vector<winnowing::minimizer> &minimizers){
         int i = 0;
         while(minimizers[i].index < start){
@@ -86,8 +90,25 @@ namespace mapper {
         }
 
         while(minimizers[i].index < end){
-            L[minimizers[i].hash] = L.count(minimizers[i].hash) ? 1 : 0;
+            if (L.find(minimizers[i].hash) != L.end()) {
+                auto match = L[minimizers[i].hash];
+                match.mutual = 1;
+                match.strand *= minimizers[i].strand;
+            } else {
+                L[minimizers[i].hash] = (matchInfo) {
+                        mutual: 0,
+                        strand: minimizers[i].strand
+                };
+            }
         }
+    }
+
+    bool consensus_strand(std::map<winnowing::minhash_t, matchInfo> L, uint32_t s) {
+        uint32_t sum = 0;
+        for (uint32_t i = 0; i < s; i++) {
+            sum += L[i].strand;
+        }
+        return sum > 0;
     }
 
 
@@ -103,8 +124,8 @@ namespace mapper {
             uint32_t  i = candidate.start;
             uint32_t  j = candidate.start + query_length;
 
-            std::map<winnowing::minhash_t, int32_t > L;
-            init_L(L, query_minimizers);                // treba ih i za ostale opet postavit na nulu, ili?
+            std::map<winnowing::minhash_t, matchInfo> L;
+            init_L(L, query_minimizers);                // treba ih i za ostale opet postavit na nulu, ili? mislim da ne
             insert_into_map(i, j, L, ref_minimizers);
 
             winnowing::minhash_t J = solve_jaccard(L, s);
@@ -119,7 +140,11 @@ namespace mapper {
 
                 J = solve_jaccard(L, s);
                 if (J >= tau){
-                    estimates.push_back((estimate) {position: i, jaccard: J});
+                    estimates.push_back((estimate) {
+                            position: i,
+                            strand: consensus_strand(L, s),
+                            jaccard: J
+                    });
                 }
 
                 i++;
@@ -127,6 +152,7 @@ namespace mapper {
             }
         }
     }
+
 
     int binary_search(std::vector<winnowing::minimizer> &minimizers,
                       uint32_t start,
@@ -149,7 +175,6 @@ namespace mapper {
         return binary_search(minimizers, start, length/2, element);
     }
 
-
     void get_minimizers_between(uint32_t start,
                                 uint32_t end,
                                 std::vector<winnowing::minimizer> &minimizers,
@@ -163,4 +188,6 @@ namespace mapper {
             result.push_back(minimizers[i].hash);
         }
     }
+
+
 }

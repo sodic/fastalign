@@ -43,6 +43,7 @@ add_subdirectory(vendor/bioparser EXCLUDE_FROM_ALL)
 add_subdirectory(src/winnowing)
 add_subdirectory(src/FASTARead)
 add_subdirectory(src/mapper)
+add_subdirectory(src/align)
 add_subdirectory(tests)
 
 

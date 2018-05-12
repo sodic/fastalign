@@ -1,0 +1,1 @@
+minimizeri skoro sigurno ne rade dobro s negativnim indeksima.

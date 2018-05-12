@@ -239,13 +239,13 @@ namespace winnowing{
                 }
 
                 else if(u < v && u <= last_min_hash){
-                    minimizers.emplace_back((minimizer) {u, (i + w - 1)});
+                    minimizers.emplace_back((minimizer) {u, (i + w - 1), 1});
                     last_min_position = i + w - 1;
                     last_min_hash = u;
                 }
 
                 else if(u > v && v <= last_min_hash) {
-                    minimizers.emplace_back((minimizer) {v, (i + w - 1)});
+                    minimizers.emplace_back((minimizer) {v, (i + w - 1), -1});
                     last_min_position = (i + w - 1);
                     last_min_hash = v;
                 }
@@ -309,6 +309,12 @@ namespace winnowing{
         delete[] r_hash_buffer;
     }
 
+    void compute_minimizers(const char *seq,
+                            uint32_t seq_l,
+                            std::vector<minimizer> &minimizers) {
+        compute_minimizers(seq, seq_l, DEFAULT_W, DEFAULT_K, minimizers);
+    }
+
     /**
  * Wrapper function for finding all minimizers of a sequence and embedding the resulting vector into a vector of vectors
  * which keeps track of all minimizer vectors for all sequnces.
@@ -323,13 +329,20 @@ namespace winnowing{
                         uint32_t w,
                         uint32_t k,
                         std::vector<minimizer>& minimizers,
-                        unordered_map<minhash_t, vector<int32_t >>& lookup_table){
+                        unordered_map<minhash_t, vector<uint32_t >> &lookup_table) {
 
         compute_minimizers(sequence, sequence_l, w, k, minimizers);
         for (auto &minimizer : minimizers) {
             lookup_table[minimizer.hash].push_back(minimizer.index);
         }
         minimizers.shrink_to_fit();
+    }
+
+    void index_sequence(const char *sequence,
+                        uint32_t sequence_l,
+                        std::vector<winnowing::minimizer> &minimizers,
+                        std::unordered_map<minhash_t, std::vector<std::uint32_t >> &lookup_table) {
+        index_sequence(sequence, sequence_l, DEFAULT_W, DEFAULT_K, minimizers, lookup_table);
     }
 
 
