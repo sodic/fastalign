@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <unordered_map>
-#include "winnowing.h"
+#include "winnowing.hpp"
 
 using namespace std;
 

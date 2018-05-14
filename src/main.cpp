@@ -1,8 +1,6 @@
 #include <iostream>
-#include <winnowing/winnowing.h>
+#include <winnowing/winnowing.hpp>
 #include "bioparser/bioparser.hpp"
-#include <vector>
-#include <unordered_map>
 #include "FASTARead/FASTARead.h"
 
 using namespace std;
@@ -18,7 +16,7 @@ int main(int argc, char const *argv[]) {
     const uint32_t length = fasta_reads[0]->get_data_length();
 
     vector<winnowing::minimizer> minimizers;
-    unordered_map<winnowing::minhash_t, vector<int32_t>> lookup_table;
+    unordered_map<winnowing::minhash_t, vector<uint32_t>> lookup_table;
     winnowing::index_sequence(reference, length, winnowing::DEFAULT_W, winnowing::DEFAULT_K, minimizers, lookup_table);
 
     cout << "Reference sequence successfully indexed." << endl;

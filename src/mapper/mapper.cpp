@@ -5,11 +5,12 @@
 #include <cstdint>
 #include <vector>
 #include <FASTARead/FASTARead.h>
-#include <winnowing/winnowing.h>
+#include <winnowing/winnowing.hpp>
 #include<cmath>
 #include <algorithm>
 #include <map>
-#include "mapper.h"
+#include <assert.h>
+#include "mapper.hpp"
 
 
 namespace mapper {
@@ -74,12 +75,18 @@ namespace mapper {
         }
     }
 
-    uint32_t solve_jaccard(const std::map<winnowing::minhash_t, matchInfo> &L, uint32_t s) {
+    double solve_jaccard(std::map<winnowing::minhash_t, matchInfo> &L, uint32_t s) {
+        assert(s > 0);
+
         uint32_t shared_sketch = 0;
-        for(uint32_t i = 0; i < s; i++){
-            shared_sketch += L[i].mutual;
+        auto it = L.begin();
+        uint32_t collected = 0;
+        while (it != L.end() && collected < s) {
+            shared_sketch += it->second.mutual;
+            it++;
+            collected++;
         }
-        return shared_sketch/s;
+        return 1.0 * shared_sketch / s;
     }
 
 
@@ -109,24 +116,32 @@ namespace mapper {
 
         while(minimizers[i].index < end){
             if (L.find(minimizers[i].hash) != L.end()) {
-                auto match = L[minimizers[i].hash];
-                match.mutual = 1;
-                match.strand *= minimizers[i].strand;
+                L[minimizers[i].hash].mutual = 1;
+                L[minimizers[i].hash].strand *= minimizers[i].strand;
             } else {
-                L[minimizers[i].hash] = (matchInfo) {
+                L[minimizers[i].hash] = matchInfo {
                         mutual: 0,
                         strand: minimizers[i].strand
                 };
             }
+            i++;
         }
     }
 
     bool consensus_strand(std::map<winnowing::minhash_t, matchInfo> L, uint32_t s) {
-        uint32_t sum = 0;
-        for (uint32_t i = 0; i < s; i++) {
-            sum += L[i].strand;
+        assert(s > 0);
+
+        int32_t sum = 0;
+        uint32_t counter = 0;
+        auto it = L.begin();
+        while (it != L.end() && counter < s) {
+            if (it->second.mutual) {
+                sum += it->second.strand;
+                counter++;
+            }
+            it++;
         }
-        return sum > 0;
+        return sum >= 0;
     }
 
 
@@ -148,7 +163,7 @@ namespace mapper {
 
             winnowing::minhash_t J = solve_jaccard(L, s);
             if (J >= tau){
-                estimates.push_back((estimate) {position: i, jaccard: J});
+                estimates.push_back((estimate) {i, J});
             }
 
             while(i <= candidate.end){
@@ -191,20 +206,6 @@ namespace mapper {
         }
 
         return binary_search(minimizers, start, length/2, element);
-    }
-
-    void get_minimizers_between(uint32_t start,
-                                uint32_t end,
-                                std::vector<winnowing::minimizer> &minimizers,
-                                std::vector<winnowing::minhash_t > &result){
-        int i = 0;
-        while(minimizers[i].index < start){
-            i++;
-        }
-
-        while(minimizers[i].index < end){
-            result.push_back(minimizers[i].hash);
-        }
     }
 
 

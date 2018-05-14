@@ -6,7 +6,7 @@
 #define ZAVRSNI_MAPPER_H
 
 #include <FASTARead/FASTARead.h>
-#include <winnowing/winnowing.h>
+#include <winnowing/winnowing.hpp>
 
 namespace mapper {
 
@@ -108,13 +108,13 @@ namespace mapper {
                              estimates);
 
         for (mapper::estimate &e : estimates) {
-            mappings.push_back(Mapping{
-                    query_start : offset,
-                    query_end : offset + fragment_length - 1,
-                    ref_start: e.position,
-                    ref_end: e.position + fragment_length,
-                    identity_estimate: 100 * (1 - jaccard_to_e(e.jaccard, winnowing::DEFAULT_K))
-            });
+            Mapping m{};
+            m.query_start = offset;
+            m.query_end = offset + fragment_length - 1;
+            m.ref_start = e.position;
+            m.ref_end = e.position + fragment_length;
+            m.identity_estimate = 100 * (1 - jaccard_to_e(e.jaccard, winnowing::DEFAULT_K));
+            mappings.push_back(m);
         }
     }
 

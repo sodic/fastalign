@@ -1,3 +1,4 @@
 add_library(mapper mapper.cpp)
 install (TARGETS mapper DESTINATION bin)
-install (FILES mapper.h DESTINATION include)
+target_link_libraries(mapper winnowing)
+install(FILES mapper.hpp DESTINATION include)

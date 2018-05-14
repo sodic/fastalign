@@ -3,11 +3,11 @@
 //
 #include "gtest/gtest.h"
 
-#include "winnowing.h"
+#include "winnowing.hpp"
 
 using namespace std;
 
-namespace tests {
+namespace winnowing {
     TEST(IndexingTest, WorkingProperly) {
         vector<winnowing::minimizer> minimizers;
         unordered_map<winnowing::minhash_t, vector<uint32_t>> lookup_table;
