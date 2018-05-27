@@ -7,6 +7,7 @@
 
 #include <FASTARead/FASTARead.h>
 #include <winnowing/winnowing.hpp>
+#include "Sweeper/Sweeper.h"
 
 namespace mapper {
 
@@ -36,6 +37,14 @@ namespace mapper {
 
         uint32_t split_id; // split reading combinations
         bool discard;
+
+        void setInvalid() {
+            this->discard = false;
+        }
+
+        double score() {
+            return this->identity_estimate;
+        }
     } Mapping;
 
     typedef struct {
@@ -53,6 +62,43 @@ namespace mapper {
         bool strand;
         winnowing::minhash_t jaccard;
     } estimate;
+
+    typedef std::tuple<uint32_t, bool, uint32_t> sweeppoint;
+
+    void filter_on_query(std::vector<Mapping> &mappings) {
+        //assume all mappings are redundant
+        for (Mapping &m : mappings) {
+            m.discard = true;
+        }
+
+        //preparing the 2n points for the sweep
+        std::vector<sweeppoint> points(2 * mappings.size());
+        for (int i = 0; i < mappings.size(); ++i) {
+            points.emplace_back(mappings[i].query_start, false, i);
+            points.emplace_back(mappings[i].query_end + 1, true, i);
+        }
+        std::sort(points.begin(), points.end());
+
+        Sweeper<mapper::Mapping> sweeper(mappings);
+
+        auto it = points.begin();
+        while (it != points.end()) {
+            uint32_t current_pos = std::get<0>(*it);
+            while (std::get<0>(*it) == current_pos) {
+                if (std::get<1>(*it)) {
+                    sweeper.remove(std::get<2>(*it));
+                } else {
+                    sweeper.insert(std::get<2>(*it));
+                }
+            }
+            sweeper.mark_good();
+            it++;
+        }
+
+        mappings.erase(std::remove_if(mappings.begin(), mappings.end(), [](const Mapping &m) {
+            return m.discard;
+        }), mappings.end());
+    }
 
     void find_candidates(std::vector<winnowing::minimizer>& query_minimizers,
                          uint32_t query_length,
@@ -227,6 +273,9 @@ namespace mapper {
         }
 
         merge_mappings(mappings, fragment_length);
+
+        //linear sweep
+        filter_on_query(mappings);
     }
 
 }
