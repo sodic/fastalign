@@ -49,6 +49,14 @@ namespace mapper {
         uint32_t start() {
             return this->query_start;
         }
+
+        void mark_good() {
+            return this->discard = false;
+        }
+
+        void mark_redundant() {
+            return this->discard = true;
+        }
     } Mapping;
 
     typedef struct {
@@ -76,7 +84,7 @@ namespace mapper {
     void filter_on_query(std::vector<Mapping> &mappings) {
         //assume all mappings are redundant
         for (Mapping &m : mappings) {
-            m.discard = true;
+            m.mark_redundant();
         }
 
         //preparing the 2n points for the sweep

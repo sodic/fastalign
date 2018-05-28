@@ -9,21 +9,25 @@
 #include <set>
 #include <vector>
 #include <cstdint>
+#include <tuple>
 
 template<class Mapping>
 class MappingComparator {
 private:
     std::vector<Mapping> &_mappings;
 public:
-    explicit MappingComparator(std::vector<Mapping> mappings) : _mappings(mappings) {}
+    explicit MappingComparator(std::vector<Mapping> &mappings) : _mappings(mappings) {}
 
     bool operator()(const uint32_t &i1, const uint32_t &i2) {
         Mapping m1 = this->_mappings[i1];
+        double score1 = m1.score();
+        double start1 = m1.start();
+
         Mapping m2 = this->_mappings[i2];
-        if (m1.score() != m2.score()) {
-            return m1.score() > m2.score();
-        }
-        return m1.start() >= m2.start();
+        double score2 = m2.score();
+        double start2 = m2.start();
+
+        return std::tie(score1, start1) > std::tie(score2, start2);
     }
 };
 
@@ -43,13 +47,12 @@ public:
     }
 
     void remove(uint32_t index) {
-        this->_bst.erase(index); //todo radi li ovo ako ne brise uspjesno bez iteratora
+        this->_bst.erase(index);
     }
 
     uint32_t pop() {
-        auto it = this->_bst.begin();
-        uint32_t index = *it;
-        this->_bst.erase(it);
+        uint32_t index = *(this->_bst.begin());
+        this->_bst.erase(index);
         return index;
     }
 
@@ -57,7 +60,7 @@ public:
         auto it = this->_bst.begin();
         uint32_t top_score = _mappings[*it].score();
         while (it != this->_bst.end() && _mappings[*it].score() >= top_score) {
-            _mappings[*it].discard = false;
+            _mappings[*it].mark_good();
             it++;
         }
     }

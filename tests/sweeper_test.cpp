@@ -13,8 +13,11 @@ namespace sweeper {
     class MockMapping {
         double _score;
         uint32_t _start;
+        bool discard;
     public:
-        MockMapping(uint32_t start, double score) : _start(start), _score(score) {}
+        MockMapping(uint32_t start, double score) : _start(start), _score(score) {
+            this->discard = true;
+        }
 
         double score() {
             return _score;
@@ -23,7 +26,46 @@ namespace sweeper {
         uint32_t start() {
             return _start;
         }
+
+        void mark_good() {
+            this->discard = false;
+        }
+
+        bool is_redundant() {
+            return this->discard;
+        }
     };
+
+
+    TEST(SweeperTest, MarkGoodTest) {
+        std::vector<MockMapping> mappings;
+        mappings.emplace_back(MockMapping(2, 13.0));
+        mappings.emplace_back(MockMapping(6, 20.0));
+        mappings.emplace_back(MockMapping(4, 20.0));
+        mappings.emplace_back(MockMapping(3, 15.0));
+        mappings.emplace_back(MockMapping(7, 20.0));
+        mappings.emplace_back(MockMapping(1, 17.0));
+        mappings.emplace_back(MockMapping(7, 19.0));
+        mappings.emplace_back(MockMapping(0, 20.0));
+        mappings.emplace_back(MockMapping(10, 17.0));
+        mappings.emplace_back(MockMapping(7, 19.5));
+        mappings.emplace_back(MockMapping(12, 20));
+        mappings.emplace_back(MockMapping(3, 12));
+        bool redundants[] = {true, false, false, true, false, true, true, false, true, true, false, true};
+
+
+        Sweeper<MockMapping> sweeper(mappings);
+        for (unsigned int i = 0; i < mappings.size(); ++i) {
+            sweeper.insert(i);
+        }
+
+        sweeper.mark_good();
+
+        for (int j = 0; j < mappings.size(); ++j) {
+            ASSERT_EQ(mappings[j].is_redundant(), redundants[j]);
+        }
+
+    }
 
     TEST(SweeperTest, ProperSorting) {
         std::vector<MockMapping> mappings;
