@@ -9,3 +9,7 @@ include_directories("${PROJECT_SOURCE_DIR}/src/mapper")
 add_executable(testMapper mapper_test.cpp)
 target_link_libraries(testMapper gtest_main)
 target_link_libraries(testMapper mapper)
+
+include_directories("${PROJECT_SOURCE_DIR}/src/sweeper")
+add_executable(testSweeper sweeper_test.cpp)
+target_link_libraries(testSweeper gtest_main)

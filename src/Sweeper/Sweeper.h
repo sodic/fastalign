@@ -7,6 +7,8 @@
 
 
 #include <set>
+#include <vector>
+#include <cstdint>
 
 template<class Mapping>
 class MappingComparator {
@@ -17,11 +19,11 @@ public:
 
     bool operator()(const uint32_t &i1, const uint32_t &i2) {
         Mapping m1 = this->_mappings[i1];
-        Mapping m2 = this->_mappings[i1];
+        Mapping m2 = this->_mappings[i2];
         if (m1.score() != m2.score()) {
-            return m1.score() < m2.score();
+            return m1.score() > m2.score();
         }
-        return m1.query_start <= m2.query_start;
+        return m1.start() >= m2.start();
     }
 };
 
@@ -37,20 +39,26 @@ public:
     }
 
     void insert(uint32_t index) {
-        this->_bst.erase(index);
-    }
-
-    void remove(uint32_t index) {
         this->_bst.insert(index);
     }
 
+    void remove(uint32_t index) {
+        this->_bst.erase(index); //todo radi li ovo ako ne brise uspjesno bez iteratora
+    }
+
+    uint32_t pop() {
+        auto it = this->_bst.begin();
+        uint32_t index = *it;
+        this->_bst.erase(it);
+        return index;
+    }
+
     void mark_good() {
-        uint32_t top_score = _mappings[*(this->_bst.begin())].score();
-        for (auto it = this->_bst.begin(); it != this->_bst.end(); it++) {
-            if (_mappings[*it].score() < top_score) {
-                return;
-            }
+        auto it = this->_bst.begin();
+        uint32_t top_score = _mappings[*it].score();
+        while (it != this->_bst.end() && _mappings[*it].score() >= top_score) {
             _mappings[*it].discard = false;
+            it++;
         }
     }
 };

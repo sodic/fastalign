@@ -45,6 +45,10 @@ namespace mapper {
         double score() {
             return this->identity_estimate;
         }
+
+        uint32_t start() {
+            return this->query_start;
+        }
     } Mapping;
 
     typedef struct {
@@ -63,7 +67,11 @@ namespace mapper {
         winnowing::minhash_t jaccard;
     } estimate;
 
-    typedef std::tuple<uint32_t, bool, uint32_t> sweeppoint;
+
+    enum Event {
+        Begin, End
+    };
+    typedef std::tuple<uint32_t, Event, uint32_t> sweeppoint;
 
     void filter_on_query(std::vector<Mapping> &mappings) {
         //assume all mappings are redundant
@@ -74,8 +82,8 @@ namespace mapper {
         //preparing the 2n points for the sweep
         std::vector<sweeppoint> points(2 * mappings.size());
         for (int i = 0; i < mappings.size(); ++i) {
-            points.emplace_back(mappings[i].query_start, false, i);
-            points.emplace_back(mappings[i].query_end + 1, true, i);
+            points.emplace_back(mappings[i].query_start, Begin, i);
+            points.emplace_back(mappings[i].query_end + 1, End, i);
         }
         std::sort(points.begin(), points.end());
 
@@ -85,11 +93,13 @@ namespace mapper {
         while (it != points.end()) {
             uint32_t current_pos = std::get<0>(*it);
             while (std::get<0>(*it) == current_pos) {
-                if (std::get<1>(*it)) {
-                    sweeper.remove(std::get<2>(*it));
-                } else {
+
+                if (std::get<1>(*it) == Event::Begin) {
                     sweeper.insert(std::get<2>(*it));
+                } else {
+                    sweeper.remove(std::get<2>(*it));
                 }
+                it++;
             }
             sweeper.mark_good();
             it++;
