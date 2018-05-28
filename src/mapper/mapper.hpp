@@ -51,11 +51,11 @@ namespace mapper {
         }
 
         void mark_good() {
-            return this->discard = false;
+            this->discard = false;
         }
 
         void mark_redundant() {
-            return this->discard = true;
+            this->discard = true;
         }
     } Mapping;
 
@@ -88,7 +88,7 @@ namespace mapper {
         }
 
         //preparing the 2n points for the sweep
-        std::vector<sweeppoint> points(2 * mappings.size());
+        std::vector<sweeppoint> points;
         for (int i = 0; i < mappings.size(); ++i) {
             points.emplace_back(mappings[i].query_start, Begin, i);
             points.emplace_back(mappings[i].query_end + 1, End, i);
@@ -110,7 +110,6 @@ namespace mapper {
                 it++;
             }
             sweeper.mark_good();
-            it++;
         }
 
         mappings.erase(std::remove_if(mappings.begin(), mappings.end(), [](const Mapping &m) {

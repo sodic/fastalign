@@ -30,7 +30,6 @@ namespace winnowing {
                 {6, matchInfo {mutual: 0, strand: 1}}
 
         };
-        uint32_t s = 4;
         ASSERT_EQ(solve_jaccard(L, 2), 0.5);
     }
 
@@ -150,18 +149,17 @@ namespace winnowing {
     }
 
     TEST(RemoveFromMap, WorkingProperly) {
-        std::vector<winnowing::minimizer> minimizers = {
-                winnowing::minimizer {hash: 1, index: 34, strand: 1},
-                winnowing::minimizer {hash: 2, index: 56, strand: 1},
-                winnowing::minimizer {hash: 3, index: 78, strand: 1},
-                winnowing::minimizer {hash: 4, index: 93, strand: 1},
-                winnowing::minimizer {hash: 5, index: 123, strand: 1},
-                winnowing::minimizer {hash: 6, index: 156, strand: 1},
-                winnowing::minimizer {hash: 7, index: 167, strand: 1},
-                winnowing::minimizer {hash: 8, index: 169, strand: 1},
-                winnowing::minimizer {hash: 8, index: 171, strand: 1},
-                winnowing::minimizer {hash: 9, index: 185, strand: 1},
-        };
+        std::vector<winnowing::minimizer> minimizers;
+        minimizers.emplace_back(winnowing::minimizer {hash: 1, index: 34, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 2, index: 56, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 3, index: 78, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 4, index: 93, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 5, index: 123, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 6, index: 156, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 7, index: 167, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 8, index: 169, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 8, index: 171, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 9, index: 185, strand: 1});
 
         std::map<winnowing::minhash_t, matchInfo> L;
         insert_into_map(75, 170, L, minimizers);
@@ -176,6 +174,36 @@ namespace winnowing {
         for (int i = 3; i <= 8; ++i) {
             ASSERT_EQ(L.find(i)->second.mutual, 1);
         }
+    }
+
+
+    TEST(FilterTest, JainsToySample) {
+        std::vector<Mapping> mappings;
+        // I'm using query_seq_length as IDs  ^^
+        mappings.emplace_back(
+                Mapping {query_seq_length: 0, query_start: 10, query_end: 30, ref_start: 0, ref_end: 0, identity_estimate: 11, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 1, query_start: 20, query_end: 40, ref_start: 0, ref_end: 0, identity_estimate: 10, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 2, query_start: 25, query_end: 45, ref_start: 0, ref_end: 0, identity_estimate: 15, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 3, query_start: 50, query_end: 70, ref_start: 0, ref_end: 0, identity_estimate: 14, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 4, query_start: 57, query_end: 95, ref_start: 0, ref_end: 0, identity_estimate: 14, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 5, query_start: 60, query_end: 75, ref_start: 0, ref_end: 0, identity_estimate: 12, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 6, query_start: 80, query_end: 90, ref_start: 0, ref_end: 0, identity_estimate: 15, strand: true});
+
+        filter_on_query(mappings);
+
+        ASSERT_EQ(mappings.size(), 5);
+        ASSERT_EQ(mappings[0].query_seq_length, 0);
+        ASSERT_EQ(mappings[1].query_seq_length, 2);
+        ASSERT_EQ(mappings[2].query_seq_length, 3);
+        ASSERT_EQ(mappings[3].query_seq_length, 4);
+        ASSERT_EQ(mappings[4].query_seq_length, 6);
+
     }
 
     /*TEST(SolveJaccardTest, OKEstimate) {
