@@ -179,7 +179,7 @@ namespace winnowing {
 
     TEST(FilterTest, JainsToySample) {
         std::vector<Mapping> mappings;
-        // I'm using query_seq_length as IDs  ^^
+        // Since the algorithm doesn't use sequence lengths, I'm using the fields of query_seq_length as IDs  ^^
         mappings.emplace_back(
                 Mapping {query_seq_length: 0, query_start: 10, query_end: 30, ref_start: 0, ref_end: 0, identity_estimate: 11, strand: true});
         mappings.emplace_back(
@@ -203,6 +203,39 @@ namespace winnowing {
         ASSERT_EQ(mappings[2].query_seq_length, 3);
         ASSERT_EQ(mappings[3].query_seq_length, 4);
         ASSERT_EQ(mappings[4].query_seq_length, 6);
+
+    }
+
+    TEST(FilterTest, MyToySample) {
+        std::vector<Mapping> mappings;
+        // Since the algorithm doesn't use sequence lengths, I'm using the fields of query_seq_length as IDs  ^^
+        mappings.emplace_back(
+                Mapping {query_seq_length: 0, query_start: 1, query_end: 8, ref_start: 0, ref_end: 0, identity_estimate: 15, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 1, query_start: 2, query_end: 6, ref_start: 0, ref_end: 0, identity_estimate: 13, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 2, query_start: 4, query_end: 12, ref_start: 0, ref_end: 0, identity_estimate: 12, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 3, query_start: 11, query_end: 19, ref_start: 0, ref_end: 0, identity_estimate: 17, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 4, query_start: 11, query_end: 21, ref_start: 0, ref_end: 0, identity_estimate: 14, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 5, query_start: 16, query_end: 24, ref_start: 0, ref_end: 0, identity_estimate: 15, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 6, query_start: 22, query_end: 26, ref_start: 0, ref_end: 0, identity_estimate: 15, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 7, query_start: 23, query_end: 29, ref_start: 0, ref_end: 0, identity_estimate: 10, strand: true});
+        mappings.emplace_back(
+                Mapping {query_seq_length: 8, query_start: 25, query_end: 30, ref_start: 0, ref_end: 0, identity_estimate: 20, strand: true});
+        filter_on_query(mappings);
+
+        ASSERT_EQ(mappings.size(), 6);
+        ASSERT_EQ(mappings[0].query_seq_length, 0);
+        ASSERT_EQ(mappings[1].query_seq_length, 2);
+        ASSERT_EQ(mappings[2].query_seq_length, 3);
+        ASSERT_EQ(mappings[3].query_seq_length, 5);
+        ASSERT_EQ(mappings[4].query_seq_length, 6);
+        ASSERT_EQ(mappings[5].query_seq_length, 8);
 
     }
 

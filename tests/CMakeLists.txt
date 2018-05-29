@@ -13,3 +13,7 @@ target_link_libraries(testMapper mapper)
 include_directories("${PROJECT_SOURCE_DIR}/src/sweeper")
 add_executable(testSweeper sweeper_test.cpp)
 target_link_libraries(testSweeper gtest_main)
+
+include_directories("${PROJECT_SOURCE_DIR}/src/statistics")
+add_executable(testStats statistics_test.cpp)
+target_link_libraries(testStats gtest_main)

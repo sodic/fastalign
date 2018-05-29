@@ -161,7 +161,7 @@ namespace mapper {
             init_L(L, query_minimizers);                // treba ih i za ostale opet postavit na nulu, ili? mislim da ne
             insert_into_map(i, j, L, ref_minimizers);
 
-            winnowing::minhash_t J = solve_jaccard(L, s);
+            double J = solve_jaccard(L, s);
             if (J >= tau){
                 estimates.push_back((estimate) {i, J});
             }

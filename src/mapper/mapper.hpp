@@ -7,24 +7,10 @@
 
 #include <FASTARead/FASTARead.h>
 #include <winnowing/winnowing.hpp>
+#include <statistics/statistics.hpp>
 #include "Sweeper/Sweeper.h"
 
 namespace mapper {
-
-    const uint32_t DEFAULT_FRAGMENT_LENGTH = 5000; // taken from MashMap, default l0/2
-    const double DEFAULT_IDENTITY_THRESHOLD = 0.85; // hopefully taken from MashMap
-
-    double jaccard_to_e(float jaccard, int k) {
-        if (jaccard == 0) {
-            return 1.0; //jaccard estimate 0 -> 1.0 mash distance
-        }
-
-        if (jaccard == 1) {
-            return 0.0; //jaccard estimate 1 -> 0.0 mash distance
-        }
-
-        return (-1.0 / k) * log(2.0 * jaccard / (1 + jaccard));
-    }
 
     typedef struct {
         uint32_t query_seq_length; // treba li nam ovo
@@ -72,7 +58,7 @@ namespace mapper {
     typedef struct{
         uint32_t position;
         bool strand;
-        winnowing::minhash_t jaccard;
+        double jaccard;
     } estimate;
 
 
@@ -176,7 +162,7 @@ namespace mapper {
             m.query_end = offset + fragment_length - 1;
             m.ref_start = e.position;
             m.ref_end = e.position + fragment_length;
-            m.identity_estimate = 100 * (1 - jaccard_to_e(e.jaccard, winnowing::DEFAULT_K));
+            m.identity_estimate = 100 * (1 - statistics::jaccard_to_e(e.jaccard, winnowing::DEFAULT_K));
             mappings.push_back(m);
         }
     }
@@ -276,7 +262,7 @@ namespace mapper {
         winnowing::index_sequence(R, r_length, ref_minimizers, lookup_table);
 
         // map each of the l0/2 fragments of the query
-        uint32_t fragment_length = DEFAULT_FRAGMENT_LENGTH;
+        uint32_t fragment_length = config::constants::default_segment_length;
         uint32_t number_of_fragments = r_length / fragment_length;
         for (uint32_t i = 0; i < number_of_fragments; ++i) {
             process_fragment(Q, fragment_length, i * fragment_length, ref_minimizers, lookup_table, mappings, s, tau);
