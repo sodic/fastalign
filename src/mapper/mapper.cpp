@@ -40,7 +40,9 @@ namespace mapper {
                          double tau,
                          std::vector<region> &candidates) {
         int m = (uint32_t) ceil(0.001 * tau * s);
+
         int alt_m = statistics::min_hits_relaxed_estimate(s, config::constants::default_k);
+        alt_m = alt_m < 1 ? 1 : alt_m;
 
         std::vector<uint32_t> positions;         // the array L
 
@@ -272,21 +274,6 @@ namespace mapper {
         }), mappings.end());
     }
 
-    void find_candidates(std::vector<winnowing::minimizer> &query_minimizers,
-                         uint32_t query_length,
-                         std::unordered_map<winnowing::minhash_t, std::vector<uint32_t>> &lookup_table,
-                         uint32_t s,
-                         double tau,
-                         std::vector<region> &candidates);
-
-    void compute_estimates(std::vector<winnowing::minimizer> &ref_minimizers,
-                           std::vector<winnowing::minimizer> &query_minimizers,
-                           uint32_t query_length,
-                           std::vector<region> &candidates,
-                           uint32_t s,
-                           double tau,
-                           std::vector<estimate> &estimates);
-
 
     void map_fragment(const char *query_seq,
                       uint32_t query_length,
@@ -298,8 +285,11 @@ namespace mapper {
         std::vector<winnowing::minimizer> query_minimizers;
         winnowing::compute_minimizers(query_seq, query_length, 111, 16, query_minimizers);
 
-        // sketch size is |Wh(a)|, sort of, I did not make it unique
+        // sketch size is |Wh(a)|
         uint32_t s = query_minimizers.size();
+        if (s == 0) {
+            return;
+        }
 
         // first stage -> find candidates for identity estimations
         std::vector<region> candidates;
@@ -332,6 +322,7 @@ namespace mapper {
             m.ref_start = e.position;
             m.ref_end = e.position + fragment_length;
             m.identity_estimate = e.identity;
+            m.strand = e.strand;
             mappings.push_back(m);
         }
     }
@@ -452,7 +443,6 @@ namespace mapper {
         auto k = config::constants::default_k;
         auto w = statistics::calculate_window_size(k, config::constants::default_segment_length, r_length);
         winnowing::index_sequence(R, r_length, w, k, ref_minimizers, lookup_table);
-        std::cout << "Fnished indexing the reference, minimizers found: " << ref_minimizers.size() << std::endl;
 
         // map each of the l0/2 fragments of the query
         uint32_t fragment_length = config::constants::default_segment_length;

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <sstream>
-#include <winnowing/winnowing.hpp>
+#include <winnowing_dac/winnowing.hpp>
 #include <config/config.hpp>
 #include <mapper/mapper.hpp>
 #include "mapper/mapper.hpp"

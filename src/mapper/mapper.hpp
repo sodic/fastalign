@@ -6,7 +6,7 @@
 #define ZAVRSNI_MAPPER_H
 
 #include <FASTARead/FASTARead.h>
-#include "winnowing/winnowing.hpp"
+#include "winnowing_dac/winnowing.hpp"
 #include "statistics/statistics.hpp"
 #include "Sweeper/Sweeper.h"
 
