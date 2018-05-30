@@ -1,33 +1,23 @@
 //
 // Created by filip on 13.04.18..
 //
+#include <winnowing_dac/winnowing.hpp>
 #include "gtest/gtest.h"
 
-#include "winnowing.hpp"
 
 using namespace std;
 
 namespace winnowing {
-    TEST(IndexingTest, WorkingProperly) {
-        vector<winnowing::minimizer> minimizers;
-        unordered_map<winnowing::minhash_t, vector<uint32_t>> lookup_table;
-        winnowing::index_sequence("ATTCTAGGTACGTACCGATGCAAGTGACGTAGCT", 34, 5, 3, minimizers, lookup_table);
-        winnowing::minhash_t hashes[10] = {732172425433867594, 732172425433867594, 2792028467992890898,
-                                           2792028467992890898, 5950097892632296567, 366086328681050843,
-                                           2127701371075312023, 1761781652765685196, 1464323644466701313,
-                                           732172425433867594};
-        int32_t positions[10] ={3, 4, 9, 10, 14, 17, 21, 23, 24, 29};
-        for (int i = 0; i < minimizers.size(); i++) {
-            ASSERT_EQ(minimizers[i].hash, hashes[i]);
-            ASSERT_EQ(minimizers[i].index, positions[i]);
+    TEST(minimizerTest, minimizerTest) {
+        std::vector<winnowing::minimizer> result;
+        winnowing::compute_minimizers("ACTGATGC", 8, 2, 3, result);
+        std::vector<winnowing::minimizer> expected = {winnowing::minimizer(9, -1, 1), winnowing::minimizer(30, -1, 1),
+                                                      winnowing::minimizer(14, -1, -1)};
+        ASSERT_EQ((int) result.size(), (int) expected.size());
+        for (int i = 0; i < result.size(); i++) {
+            ASSERT_EQ(result[i].hash, expected[i].hash);
+            ASSERT_EQ(result[i].strand, expected[i].strand);
         }
-        /* Nece raditi dok su nam indeksi negativni
-        for (auto it : lookup_table) {
-            for (int i : it.second) {
-                ASSERT_EQ(it.first, hashes[i]);
-            }
-        }
-        // dokazao sam samo da su svi zapamceni indeksi tocni, fali dokaz da su svi indeksi zapamceni
-         */
+
     }
 }
