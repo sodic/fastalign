@@ -44,11 +44,11 @@ add_subdirectory(src/winnowing)
 add_subdirectory(src/config)
 add_subdirectory(src/Sweeper)
 add_subdirectory(src/FASTARead)
-add_subdirectory(src/mapper)
 add_subdirectory(src/statistics)
+add_subdirectory(src/mapper)
 add_subdirectory(tests)
 
 
 set(SOURCE_FILES src/main.cpp)
 add_executable(zavrsni ${SOURCE_FILES})
-target_link_libraries(zavrsni bioparser winnowing FASTARead)
+target_link_libraries(zavrsni mapper bioparser statistics config winnowing FASTARead)

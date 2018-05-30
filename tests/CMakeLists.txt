@@ -16,4 +16,4 @@ target_link_libraries(testSweeper gtest_main)
 
 include_directories("${PROJECT_SOURCE_DIR}/src/statistics")
 add_executable(testStats statistics_test.cpp)
-target_link_libraries(testStats gtest_main)
+target_link_libraries(testStats statistics gtest_main)

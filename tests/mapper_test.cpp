@@ -169,10 +169,10 @@ namespace winnowing {
             ASSERT_EQ(L.find(i)->second.mutual, 0);
         }
 
-        insert_into_map(75, 170, L, minimizers);
-        ASSERT_EQ(L.size(), 6);
-        for (int i = 3; i <= 8; ++i) {
-            ASSERT_EQ(L.find(i)->second.mutual, 1);
+        remove_from_map(150, 180, L, minimizers);
+        ASSERT_EQ(L.size(), 3);
+        for (int i = 3; i <= 5; ++i) {
+            ASSERT_NE(L.find(i), L.end());
         }
     }
 

@@ -289,7 +289,7 @@ namespace winnowing{
                 last_min_position = min_positions[min_pos_size - 1];
 
                 for(uint32_t j = 0; j < min_pos_size; j++) {
-                    minimizers.emplace_back((minimizer) {m,  min_positions[j]}); //TREBA NEGATIVNO
+                    minimizers.emplace_back((minimizer) {m, min_positions[j], 1}); //TREBA NEGATIVNO
                 }
 
 

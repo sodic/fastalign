@@ -2,7 +2,7 @@
 // Created by filip on 29.05.18..
 //
 
-#include <statistics/statistics.hpp>
+#include "statistics/statistics.hpp"
 #include "gtest/gtest.h"
 
 namespace statistics {
