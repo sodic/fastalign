@@ -113,12 +113,15 @@ namespace mapper {
                          uint32_t end,
                          std::map<winnowing::minhash_t, matchInfo> &L,
                          std::vector<winnowing::minimizer> &minimizers){
+        if (minimizers.empty()) {
+            return;
+        }
         int i = 0;
-        while(minimizers[i].index < start){
+        while (i < minimizers.size() && minimizers[i].index < start) {
             i++;
         }
 
-        while(minimizers[i].index < end){
+        while (i < minimizers.size() && minimizers[i].index < end) {
             L.erase(minimizers[i].hash);
             i++;
         }
@@ -129,12 +132,15 @@ namespace mapper {
                          uint32_t end,
                          std::map<winnowing::minhash_t, matchInfo> &L,
                          std::vector<winnowing::minimizer> &minimizers){
+        if (minimizers.empty()) {
+            return;
+        }
         int i = 0;
-        while(minimizers[i].index < start){
+        while (i < minimizers.size() && minimizers[i].index < start) {
             i++;
         }
 
-        while(minimizers[i].index < end){
+        while (i < minimizers.size() && minimizers[i].index < end) {
             if (L.find(minimizers[i].hash) != L.end()) {
                 L[minimizers[i].hash].mutual = 1;
                 L[minimizers[i].hash].strand *= minimizers[i].strand;
