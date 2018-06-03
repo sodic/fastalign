@@ -12,6 +12,7 @@
 #include <config/config.hpp>
 #include <iostream>
 #include <chrono>
+#include <thread_pool/thread_pool.hpp>
 #include "mapper.hpp"
 
 
@@ -438,30 +439,21 @@ namespace mapper {
 
         // first stage -> find candidates for identity estimations
         std::vector<region> candidates;
-        std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
         find_candidates(query_minimizers, query_length, lookup_table, s, tau, candidates);
-        std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-        std::cout << "Candidates found in " << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
-                  << std::endl;
 
         // second stage -> estimate identity for alignments
-        t1 = std::chrono::high_resolution_clock::now();
         compute_estimates(ref_minimizers, position_table, query_minimizers, query_length, candidates, s, tau,
                           estimates);
-        t2 = std::chrono::high_resolution_clock::now();
-        std::cout << "Estimates computed in " << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
-                  << std::endl;
     }
 
 
-    void process_fragment(const char *Q,
-                          uint32_t fragment_length,
-                          uint32_t offset,
-                          std::vector<winnowing::minimizer> &ref_minimizers,
-                          std::unordered_map<winnowing::minhash_t, std::vector<std::uint32_t >> &lookup_table,
-                          std::unordered_map<uint32_t, winnowing::minimizer> &position_table,
-                          std::vector<Mapping> &mappings,
-                          double tau) {
+    std::vector<Mapping> process_fragment(const char *Q,
+                                          uint32_t fragment_length,
+                                          uint32_t offset,
+                                          std::vector<winnowing::minimizer> &ref_minimizers,
+                                          std::unordered_map<winnowing::minhash_t, std::vector<std::uint32_t >> &lookup_table,
+                                          std::unordered_map<uint32_t, winnowing::minimizer> &position_table,
+                                          double tau) {
         std::vector<mapper::estimate> estimates;
         mapper::map_fragment(Q + offset,
                              fragment_length,
@@ -471,6 +463,7 @@ namespace mapper {
                              tau,
                              estimates);
 
+        std::vector<Mapping> mappings;
         for (mapper::estimate &e : estimates) {
             Mapping m{};
             m.query_start = offset;
@@ -481,6 +474,7 @@ namespace mapper {
             m.strand = e.strand;
             mappings.push_back(m);
         }
+        return mappings;
     }
 
 
@@ -563,6 +557,25 @@ namespace mapper {
                 }), mappings.end());
     }
 
+    std::vector<Mapping> deri(const char *Q,
+                              uint32_t fragment_length,
+                              uint32_t offset,
+                              std::vector<winnowing::minimizer> &ref_minimizers,
+                              std::unordered_map<winnowing::minhash_t, std::vector<std::uint32_t >> &lookup_table,
+                              std::unordered_map<uint32_t, winnowing::minimizer> &position_table,
+                              double tau) {
+        std::vector<Mapping> m;
+        return m;
+    }
+
+
+    void report_status(const char *operation, int curr, long total) {
+        const char *progress = "-\\|/";
+        long ratio = 100 * curr / total;
+        fprintf(stdout, "\r%s [%c] %ld%c", operation, progress[curr % 4], ratio, '%');
+        fflush(stdout);
+    }
+
     void compute_mappings(const char *R,
                           uint32_t r_length,
                           const char *Q,
@@ -585,25 +598,50 @@ namespace mapper {
 
         std::cout << "Fragment count: " << number_of_fragments << "(+/- 1)" << std::endl;
 
-        for (uint32_t i = 0; i < number_of_fragments; ++i) {
-            std::cout << i << std::endl;
-            process_fragment(Q, fragment_length, i * fragment_length, ref_minimizers, lookup_table, position_table,
-                             mappings, tau);
+        std::shared_ptr<thread_pool::ThreadPool> thread_pool_data = thread_pool::createThreadPool();
+        std::vector<std::future<std::vector<Mapping>>> thread_futures_data;
 
+        for (uint32_t i = 0; i < number_of_fragments; ++i) {
+            thread_futures_data.emplace_back(
+                    thread_pool_data->submit_task(
+                            process_fragment,
+                            Q,
+                            fragment_length,
+                            i * fragment_length,
+                            std::ref(ref_minimizers),
+                            std::ref(lookup_table),
+                            std::ref(position_table),
+                            tau));
         }
 
         // check if we have one last fragment left
         if (number_of_fragments > 0 && r_length % fragment_length != 0) {
-            process_fragment(Q, fragment_length, q_length - fragment_length, ref_minimizers, lookup_table,
-                             position_table, mappings,
-                             tau);
+            thread_futures_data.emplace_back(
+                    thread_pool_data->submit_task(
+                            process_fragment,
+                            Q,
+                            fragment_length,
+                            q_length - fragment_length,
+                            std::ref(ref_minimizers),
+                            std::ref(lookup_table),
+                            std::ref(position_table),
+                            tau));
         }
 
-        std::cout << "All fragments processed." << std::endl;
+        int counter = 0;
+        for (auto &it: thread_futures_data) {
+            it.wait();
+            report_status("Mapping fragments", counter++, number_of_fragments);
+            for (Mapping m : it.get()) {
+                mappings.push_back(m);
+            }
+        }
+        std::cout << std::endl;
+        std::cout << "All fragments processed. Merging..." << std::endl;
 
         merge_mappings(mappings, fragment_length);
 
-        std::cout << "Merged all found mappings, preparing to filter." << std::endl;
+        std::cout << "Merge finished. Filtering..." << std::endl;
 
         //linear sweep
         filter_on_query(mappings);
