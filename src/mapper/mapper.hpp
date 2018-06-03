@@ -29,7 +29,7 @@ namespace mapper {
         }
 
         double score() {
-            return this->identity_estimate;
+            return this->identity_estimate * (this->query_end - this->query_start + 1);
         }
 
         uint32_t start() {

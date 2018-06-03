@@ -18,10 +18,11 @@ namespace winnowing {
     struct minimizer {
         minhash_t hash;
         int index;
+        int real_index;
         int strand;
 
-        minimizer(minhash_t _h, int _position, bool _rc)
-                : hash(_h), index(_position), strand(_rc) {}
+        minimizer(minhash_t _h, int _position, int window_pos, int _rc)
+                : hash(_h), real_index(_position), index(window_pos), strand(_rc) {}
 
         inline bool operator<(const minimizer &other) const {
             return hash < other.hash;
@@ -41,7 +42,8 @@ namespace winnowing {
                         uint32_t w,
                         uint32_t k,
                         std::vector<minimizer> &minimizers,
-                        std::unordered_map<minhash_t, std::vector<uint32_t >> &lookup_table);
+                        std::unordered_map<minhash_t, std::vector<uint32_t >> &lookup_table,
+                        std::unordered_map<uint32_t, winnowing::minimizer> &position_table);
 
 } // namespace winnowing
 

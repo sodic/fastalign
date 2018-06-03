@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <config/config.hpp>
 #include <iostream>
+#include <chrono>
 #include "mapper.hpp"
 
 
@@ -18,6 +19,8 @@ namespace mapper {
 
 
     typedef struct {
+        int query_position;
+        int ref_position;
         uint32_t mutual;
         int32_t strand;
     } matchInfo;
@@ -32,6 +35,8 @@ namespace mapper {
         bool strand;
         double identity;
     } estimate;
+
+    static const int NO_POS = std::numeric_limits<uint32_t>::max();
 
     void find_candidates(std::vector<winnowing::minimizer>& query_minimizers,
                          uint32_t query_length,
@@ -90,6 +95,8 @@ namespace mapper {
                 std::vector<winnowing::minimizer> &minimizers){
         for(auto &minimizer : minimizers){
             L[minimizer.hash] = (matchInfo) {
+                    query_position: minimizer.index,
+                    ref_position: NO_POS,
                     mutual: 0,
                     strand: minimizer.strand
             };
@@ -124,7 +131,17 @@ namespace mapper {
         }
 
         while (i < minimizers.size() && minimizers[i].index < end) {
-            L.erase(minimizers[i].hash);
+            assert(L.find(minimizers[i].hash) != L.end());
+            matchInfo info = L[minimizers[i].hash];
+            if (info.ref_position == minimizers[i].index) {
+                if (info.query_position == NO_POS) {
+                    L.erase(minimizers[i].hash);
+                } else {
+                    L[minimizers[i].hash].ref_position = NO_POS;
+                    L[minimizers[i].hash].mutual = 0;
+
+                }
+            }
             i++;
         }
     }
@@ -144,10 +161,14 @@ namespace mapper {
 
         while (i < minimizers.size() && minimizers[i].index < end) {
             if (L.find(minimizers[i].hash) != L.end()) {
-                L[minimizers[i].hash].mutual = 1;
-                L[minimizers[i].hash].strand *= minimizers[i].strand;
+                winnowing::minhash_t hash = minimizers[i].hash;
+                L[hash].mutual = 1;
+                L[hash].ref_position = minimizers[i].index;
+                L[hash].strand *= minimizers[i].strand;
             } else {
                 L[minimizers[i].hash] = matchInfo {
+                        query_position: NO_POS,
+                        ref_position: minimizers[i].index,
                         mutual: 0,
                         strand: minimizers[i].strand
                 };
@@ -172,9 +193,133 @@ namespace mapper {
         return sum >= 0;
     }
 
+    int binary_search(std::vector<winnowing::minimizer> &minimizers,
+                      uint32_t start,
+                      uint32_t length,
+                      uint32_t element) {
+        if (!length) {
+            return -1;
+        }
+
+        uint32_t middle = start + length / 2;
+
+        if (minimizers[middle].index == element) {
+            return middle;
+        }
+
+        if (minimizers[middle].index < element) {
+            return binary_search(minimizers, middle + 1, length / 2 - 1 + length % 2, element);
+        }
+
+        return binary_search(minimizers, start, length / 2, element);
+    }
+
+
+    void insert_one_into_map(uint32_t position,
+                             std::map<winnowing::minhash_t, matchInfo> &L,
+                             std::vector<winnowing::minimizer> &minimizers) {
+        int i = binary_search(minimizers, 0, minimizers.size(), position);
+        if (i == -1) {
+            return;
+        }
+        if (L.find(minimizers[i].hash) != L.end()) {
+            winnowing::minhash_t hash = minimizers[i].hash;
+            L[hash].mutual = 1;
+            L[hash].ref_position = minimizers[i].index;
+            L[hash].strand *= minimizers[i].strand;
+        } else {
+            L[minimizers[i].hash] = matchInfo {
+                    query_position: NO_POS,
+                    ref_position: minimizers[i].index,
+                    mutual: 0,
+                    strand: minimizers[i].strand
+            };
+        }
+
+    }
+
+    void remove_one_from_map(uint32_t position,
+                             std::map<winnowing::minhash_t, matchInfo> &L,
+                             std::vector<winnowing::minimizer> &minimizers) {
+        int i = binary_search(minimizers, 0, minimizers.size(), position);
+
+        if (i == -1) {
+            return;
+        }
+
+        assert(L.find(minimizers[i].hash) != L.end());
+        matchInfo info = L[minimizers[i].hash];
+
+        if (info.ref_position != minimizers[i].index) {
+            return;
+        }
+
+        if (info.query_position == NO_POS) {
+            L.erase(minimizers[i].hash);
+        } else {
+            L[minimizers[i].hash].ref_position = NO_POS;
+            L[minimizers[i].hash].mutual = 0;
+
+        }
+
+
+    }
+
+    void insert_pos_table(uint32_t position,
+                          std::map<winnowing::minhash_t, matchInfo> &L,
+                          std::unordered_map<uint32_t, winnowing::minimizer> &position_table) {
+        auto it = position_table.find(position);
+        if (it == position_table.end()) {
+            return;
+        }
+        winnowing::minimizer m = it->second;
+        if (L.find(m.hash) != L.end()) {
+            winnowing::minhash_t hash = m.hash;
+            L[hash].mutual = 1;
+            L[hash].ref_position = m.index;
+            L[hash].strand *= m.strand;
+        } else {
+            L[m.hash] = matchInfo {
+                    query_position: NO_POS,
+                    ref_position: m.index,
+                    mutual: 0,
+                    strand: m.strand
+            };
+        }
+
+    }
+
+    void remove_pos_table(uint32_t position,
+                          std::map<winnowing::minhash_t, matchInfo> &L,
+                          std::unordered_map<uint32_t, winnowing::minimizer> &position_table) {
+        auto it = position_table.find(position);
+        if (it == position_table.end()) {
+            return;
+        }
+
+        winnowing::minimizer m = it->second;
+        assert(L.find(m.hash) != L.end());
+
+        matchInfo info = L[m.hash];
+
+        if (info.ref_position != m.index) {
+            return;
+        }
+
+        if (info.query_position == NO_POS) {
+            L.erase(m.hash);
+        } else {
+            L[m.hash].ref_position = NO_POS;
+            L[m.hash].mutual = 0;
+
+        }
+
+
+    }
 
 
     void compute_estimates(std::vector<winnowing::minimizer> &ref_minimizers,
+                           std::unordered_map<uint32_t, winnowing::minimizer> &position_table,
                            std::vector<winnowing::minimizer> &query_minimizers,
                            uint32_t query_length,
                            std::vector<region> &candidates,
@@ -206,9 +351,8 @@ namespace mapper {
             }
 
             while(i <= candidate.end){
-                L.erase(i);
-                remove_from_map(i, i+1, L, ref_minimizers);
-                insert_into_map(j, j + 1, L, ref_minimizers);
+                remove_pos_table(i, L, position_table);
+                insert_pos_table(j, L, position_table);
 
                 J = solve_jaccard(L, s);
                 e = statistics::jaccard_to_e(J, 16);
@@ -231,12 +375,12 @@ namespace mapper {
             }
         }
     }
-
-
     enum Event {
         Begin, End
     };
+
     typedef std::tuple<uint32_t, Event, uint32_t> sweeppoint;
+
 
     void filter_on_query(std::vector<Mapping> &mappings) {
         //assume all mappings are redundant
@@ -279,6 +423,7 @@ namespace mapper {
                       uint32_t query_length,
                       std::vector<winnowing::minimizer> &ref_minimizers,
                       std::unordered_map<winnowing::minhash_t, std::vector<uint32_t>> &lookup_table,
+                      std::unordered_map<uint32_t, winnowing::minimizer> &position_table,
                       double tau,
                       std::vector<estimate> &estimates) {
         // find the minimizers for the query sequence
@@ -293,10 +438,19 @@ namespace mapper {
 
         // first stage -> find candidates for identity estimations
         std::vector<region> candidates;
+        std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
         find_candidates(query_minimizers, query_length, lookup_table, s, tau, candidates);
+        std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+        std::cout << "Candidates found in " << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
+                  << std::endl;
 
         // second stage -> estimate identity for alignments
-        compute_estimates(ref_minimizers, query_minimizers, query_length, candidates, s, tau, estimates);
+        t1 = std::chrono::high_resolution_clock::now();
+        compute_estimates(ref_minimizers, position_table, query_minimizers, query_length, candidates, s, tau,
+                          estimates);
+        t2 = std::chrono::high_resolution_clock::now();
+        std::cout << "Estimates computed in " << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
+                  << std::endl;
     }
 
 
@@ -305,6 +459,7 @@ namespace mapper {
                           uint32_t offset,
                           std::vector<winnowing::minimizer> &ref_minimizers,
                           std::unordered_map<winnowing::minhash_t, std::vector<std::uint32_t >> &lookup_table,
+                          std::unordered_map<uint32_t, winnowing::minimizer> &position_table,
                           std::vector<Mapping> &mappings,
                           double tau) {
         std::vector<mapper::estimate> estimates;
@@ -312,6 +467,7 @@ namespace mapper {
                              fragment_length,
                              ref_minimizers,
                              lookup_table,
+                             position_table,
                              tau,
                              estimates);
 
@@ -407,28 +563,6 @@ namespace mapper {
                 }), mappings.end());
     }
 
-
-    int binary_search(std::vector<winnowing::minimizer> &minimizers,
-                      uint32_t start,
-                      uint32_t length,
-                      uint32_t element){
-        if(!length){
-            return -1;
-        }
-
-        uint32_t middle = start + length/2;
-
-        if (minimizers[middle].index == element){
-            return middle;
-        }
-
-        if (minimizers[middle].index < element) {
-            return binary_search(minimizers, middle + 1, length/2 - 1 + length%2, element);
-        }
-
-        return binary_search(minimizers, start, length/2, element);
-    }
-
     void compute_mappings(const char *R,
                           uint32_t r_length,
                           const char *Q,
@@ -440,9 +574,10 @@ namespace mapper {
         // indexing the reference
         std::vector<winnowing::minimizer> ref_minimizers;
         std::unordered_map<winnowing::minhash_t, std::vector<std::uint32_t >> lookup_table;
+        std::unordered_map<uint32_t, winnowing::minimizer> position_table;
         auto k = config::constants::default_k;
         auto w = statistics::calculate_window_size(k, config::constants::default_segment_length, r_length);
-        winnowing::index_sequence(R, r_length, w, k, ref_minimizers, lookup_table);
+        winnowing::index_sequence(R, r_length, w, k, ref_minimizers, lookup_table, position_table);
 
         // map each of the l0/2 fragments of the query
         uint32_t fragment_length = config::constants::default_segment_length;
@@ -452,13 +587,15 @@ namespace mapper {
 
         for (uint32_t i = 0; i < number_of_fragments; ++i) {
             std::cout << i << std::endl;
-            process_fragment(Q, fragment_length, i * fragment_length, ref_minimizers, lookup_table, mappings, tau);
+            process_fragment(Q, fragment_length, i * fragment_length, ref_minimizers, lookup_table, position_table,
+                             mappings, tau);
 
         }
 
         // check if we have one last fragment left
         if (number_of_fragments > 0 && r_length % fragment_length != 0) {
-            process_fragment(Q, fragment_length, q_length - fragment_length, ref_minimizers, lookup_table, mappings,
+            process_fragment(Q, fragment_length, q_length - fragment_length, ref_minimizers, lookup_table,
+                             position_table, mappings,
                              tau);
         }
 

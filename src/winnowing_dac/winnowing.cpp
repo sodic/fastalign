@@ -30,29 +30,29 @@ namespace {
 
     void processState(std::deque<winnowing::minimizer> &dq,
                       std::vector<winnowing::minimizer> &result, int &lastPositionTaken) {
-        assert(!dq.empty());
-        winnowing::minimizer &front = dq.front();
+
+        winnowing::minimizer front = dq.front();
         dq.pop_front();
 
-        if (lastPositionTaken < front.index) {
+        if (lastPositionTaken < front.real_index) {
             result.push_back(front);
             hashCnt[front.hash]++;
-            lastPositionTaken = front.index;
+            lastPositionTaken = front.real_index;
         }
         while (!dq.empty() && dq.front().hash == front.hash) {
             front = dq.front();
             dq.pop_front();
-            if (lastPositionTaken < front.index) {
+            if (lastPositionTaken < front.real_index) {
                 result.push_back(front);
                 hashCnt[front.hash]++;
-                lastPositionTaken = front.index;
+                lastPositionTaken = front.real_index;
             }
         }
         dq.push_front(front);
     }
 
     void pop(int position, std::deque<winnowing::minimizer> &dq) {
-        while (!dq.empty() && dq.front().index == position)
+        while (!dq.empty() && dq.front().real_index == position)
             dq.pop_front();
     }
 
@@ -73,7 +73,7 @@ namespace winnowing {
 
         if (target_length < k + w - 1) {//ne postoji ni jedan window od w kmera
             w = target_length - k +
-                1; // smanji velicinu trazenog prozora na najvise sta mozes, da se nadje barem jedan winnowing
+                1; // smanji velicinu trazenog prozora na najvise sta mozes, da se nadje barem jedan minimizer
         }
 
 
@@ -96,8 +96,8 @@ namespace winnowing {
 
         // queue s maksimumom algoritam
         for (int i = 0; i < w; i++) {
-            minimizer mp1 = minimizer(tmpHash, i, 1);
-            minimizer mp2 = minimizer(tmpRcHash, i, -1);
+            minimizer mp1 = minimizer(tmpHash, i, 0, 1);
+            minimizer mp2 = minimizer(tmpRcHash, i, 0, -1);
             push(mp1, dq);
             push(mp2, dq);
             tmpHash -= lastPower * baseValue[target[i]];
@@ -116,8 +116,8 @@ namespace winnowing {
 
         for (int i = w; i < target_length - k + 1; i++) {
             pop(i - w, dq);
-            minimizer mp1 = minimizer(tmpHash, i, 1);
-            minimizer mp2 = minimizer(tmpRcHash, i, -1);
+            minimizer mp1 = minimizer(tmpHash, i, i - w, 1);
+            minimizer mp2 = minimizer(tmpRcHash, i, i - w, -1);
             push(mp1, dq);
             push(mp2, dq);
             processState(dq, minimizers, lastPositionTaken);
@@ -139,11 +139,13 @@ namespace winnowing {
                         uint32_t w,
                         uint32_t k,
                         std::vector<minimizer> &minimizers,
-                        std::unordered_map<minhash_t, std::vector<uint32_t >> &lookup_table) {
+                        std::unordered_map<minhash_t, std::vector<uint32_t >> &lookup_table,
+                        std::unordered_map<uint32_t, minimizer> &position_table) {
 
         compute_minimizers(sequence, seq_length, w, k, minimizers);
-        for (auto &minimizer : minimizers) {
-            lookup_table[minimizer.hash].push_back(minimizer.index);
+        for (auto &mini : minimizers) {
+            lookup_table[mini.hash].push_back(mini.index);
+            position_table.insert(std::pair<uint32_t, minimizer &>(mini.index, mini));
         }
         minimizers.shrink_to_fit();
     }
