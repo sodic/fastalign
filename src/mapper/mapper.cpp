@@ -66,7 +66,7 @@ namespace mapper {
 
         int total_positions = (int) positions.size();
         for (int i = 0; i <= total_positions - alt_m; ++i) {
-            int j = i + m - 1;
+            int j = i + alt_m - 1;
 
             // check if consecutive hits are close enough
             if (positions[j] - positions[i] < query_length) {
@@ -148,16 +148,39 @@ namespace mapper {
     }
 
 
+    int binary_search_lower_bound(std::vector<winnowing::minimizer> &minimizers,
+                                  uint32_t start,
+                                  uint32_t length,
+                                  uint32_t element) {
+        if (!length) {
+            return -1;
+        }
+
+        uint32_t middle = start + length / 2;
+
+        if (minimizers[middle].index == element) {
+            return middle;
+        }
+
+        if (minimizers[middle].index < element) {
+            return binary_search_lower_bound(minimizers, middle + 1, length / 2 - 1 + length % 2, element);
+        }
+
+        if (middle > 0 && minimizers[middle - 1].index < element) {
+            return middle;
+        }
+
+        return binary_search_lower_bound(minimizers, start, length / 2, element);
+    }
+
     void insert_into_map(uint32_t start,
                          uint32_t end,
                          std::map<winnowing::minhash_t, matchInfo> &L,
                          std::vector<winnowing::minimizer> &minimizers){
-        if (minimizers.empty()) {
+
+        int i = binary_search_lower_bound(minimizers, 0, minimizers.size(), start);
+        if (i == -1) {
             return;
-        }
-        int i = 0;
-        while (i < minimizers.size() && minimizers[i].index < start) {
-            i++;
         }
 
         while (i < minimizers.size() && minimizers[i].index < end) {
@@ -193,6 +216,7 @@ namespace mapper {
         }
         return sum >= 0;
     }
+
 
     int binary_search(std::vector<winnowing::minimizer> &minimizers,
                       uint32_t start,
