@@ -517,24 +517,28 @@ namespace mapper {
             mappings[i].split_id = i;
         }
 
-        for (auto it = mappings.begin(); it != mappings.end(); it++) {
+        auto it = mappings.begin();
+        while (it != mappings.end()) {
             auto current_frag_index = std::ceil(
                     it->query_start * 1.0 / fragment_length); // which fragment is this wrt. the whole query sequence
-            for (auto it_chain = std::next(it); it_chain != mappings.end(); it_chain++) {
+            auto it_chain = std::next(it);
+            for (; it_chain != mappings.end(); it_chain++) {
 
-                // if fragments are further apart than l0/2, no chaining
-                if (it_chain->ref_start - it->ref_end > 2 * fragment_length) {
+                // if fragments are further apart than l0, no chaining
+                if (abs(it_chain->ref_start - it->ref_end) > 2 * fragment_length) {
                     break;
                 }
 
                 auto chain_frag_index = std::ceil(
                         it_chain->query_start * 1.0 / fragment_length);
                 if (it->strand == it_chain->strand
-                    && chain_frag_index == current_frag_index + (it->strand ? 1 : -1)) {
+                    && (chain_frag_index == current_frag_index ||
+                        chain_frag_index == current_frag_index + (it->strand ? 1 : -1))) {
                     it_chain->split_id = it->split_id;
                 }
 
             }
+            it = it_chain;
         }
 
         // sort mappings by split IDs
@@ -543,7 +547,7 @@ namespace mapper {
         });
 
         // each chain should be represented by only one mapping
-        auto it = mappings.begin();
+        it = mappings.begin();
         while (it != mappings.end()) {
             auto it_chain_end = std::find_if(it, mappings.end(), [&it](Mapping m) {
                 return m.split_id != it->split_id;
@@ -600,6 +604,22 @@ namespace mapper {
         fflush(stdout);
     }
 
+    void check_boundaries(std::vector<Mapping> &mappings, int q_length, int r_length) {
+        for (Mapping &m : mappings) {
+            m.ref_start = std::max(m.ref_start, 0);
+            m.ref_start = std::min(m.ref_start, r_length - 1);
+
+            m.ref_end = std::max(m.ref_start, m.ref_end);
+            m.ref_end = std::min(m.ref_end, r_length - 1);
+
+            m.query_start = std::max(m.query_start, 0);
+            m.query_start = std::min(m.query_start, q_length - 1);
+
+            m.query_end = std::max(m.query_start, m.query_end);
+            m.query_end = std::min(m.query_end, q_length - 1);
+        }
+    }
+
     void compute_mappings(const char *R,
                           uint32_t r_length,
                           const char *Q,
@@ -618,7 +638,7 @@ namespace mapper {
 
         // map each of the l0/2 fragments of the query
         uint32_t fragment_length = config::constants::default_segment_length;
-        uint32_t number_of_fragments = r_length / fragment_length;
+        uint32_t number_of_fragments = q_length / fragment_length;
 
         std::cout << "Fragment count: " << number_of_fragments << "(+/- 1)" << std::endl;
 
@@ -639,7 +659,7 @@ namespace mapper {
         }
 
         // check if we have one last fragment left
-        if (number_of_fragments > 0 && r_length % fragment_length != 0) {
+        if (number_of_fragments > 0 && q_length % fragment_length != 0) {
             thread_futures_data.emplace_back(
                     thread_pool_data->submit_task(
                             process_fragment,
@@ -669,6 +689,8 @@ namespace mapper {
 
         //linear sweep
         filter_on_query(mappings);
+
+        check_boundaries(mappings, q_length, r_length);
     }
 
 

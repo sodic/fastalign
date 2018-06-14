@@ -14,10 +14,10 @@ namespace mapper {
 
     typedef struct {
         uint32_t query_seq_length; // treba li nam ovo
-        uint32_t query_start;
-        uint32_t query_end;
-        uint32_t ref_start;
-        uint32_t ref_end;
+        int query_start;
+        int query_end;
+        int ref_start;
+        int ref_end;
         double identity_estimate;
         bool strand;
 
