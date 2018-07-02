@@ -43,7 +43,8 @@ The folder `examples` provides two example genomes for testing the program. This
 ```sh
 $ build/fastalign examples/klebsiella_pneumoniae_reference.fasta examples/escherichia_coli_reference.fasta
 ```
-This will generate the output file. To plot the graph, you can run:
+This will generate the output file. To generate a dotplot, you can run:
 ```sh
 $ scripts/generateDotPlot png large fastalign.out
 ```
+**NOTE**: If the script throws a gnuplot related error, it is most likely a gnuplot version issue. Try using `scripts/generateDotPlot2` instead.
