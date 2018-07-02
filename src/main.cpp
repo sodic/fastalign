@@ -66,7 +66,7 @@ int main(int argc, char const *argv[]) {
 
     std::vector<mapper::Mapping> mappings;
     mapper::compute_mappings(reference, ref_length, query, query_length, mappings);
-    FILE *output = fopen("outptut.paf", "w");
+    FILE *output = fopen("fastalign.out", "w");
     print_mappings(mappings, output);
     return 0;
 }
