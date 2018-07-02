@@ -1,4 +1,4 @@
-MashMap
+FastAlign
 ========================================================================
 
 This repository provides an implentation of an approximate algorithm for computing glogal genome alignments. The algorithm utilizes several heuristic techniques. Most important are [Winnowing](http://www.cs.princeton.edu/courses/archive/spr05/cos598E/bib/p76-schleimer.pdf), [Jaccard index](https://en.wikipedia.org/wiki/Jaccard_index) and [MinHash estimation](https://en.wikipedia.org/wiki/MinHash).
