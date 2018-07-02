@@ -1,0 +1,1 @@
+build/fastalign ../examples/klebsiella_pneumoniae_reference..fasta ../examples/escherichia_coli_reference.fasta && scripts/plot

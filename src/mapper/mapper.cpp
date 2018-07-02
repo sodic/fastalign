@@ -13,6 +13,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread_pool/thread_pool.hpp>
+#include <numeric>
 #include "mapper.hpp"
 
 
@@ -43,9 +44,7 @@ namespace mapper {
                          uint32_t query_length,
                          std::unordered_map<winnowing::minhash_t, std::vector<uint32_t>> &lookup_table,
                          uint32_t s,
-                         double tau,
                          std::vector<region> &candidates) {
-        int m = (uint32_t) ceil(0.001 * tau * s);
 
         int alt_m = statistics::min_hits_relaxed_estimate(s, config::constants::default_k);
         alt_m = alt_m < 1 ? 1 : alt_m;
@@ -449,11 +448,11 @@ namespace mapper {
                       std::vector<winnowing::minimizer> &ref_minimizers,
                       std::unordered_map<winnowing::minhash_t, std::vector<uint32_t>> &lookup_table,
                       std::unordered_map<uint32_t, winnowing::minimizer> &position_table,
-                      double tau,
+                      double tau, int w, int k,
                       std::vector<estimate> &estimates) {
         // find the minimizers for the query sequence
         std::vector<winnowing::minimizer> query_minimizers;
-        winnowing::compute_minimizers(query_seq, query_length, 111, 16, query_minimizers);
+        winnowing::compute_minimizers(query_seq, query_length, w, k, query_minimizers);
 
         // sketch size is |Wh(a)|
         uint32_t s = query_minimizers.size();
@@ -463,7 +462,7 @@ namespace mapper {
 
         // first stage -> find candidates for identity estimations
         std::vector<region> candidates;
-        find_candidates(query_minimizers, query_length, lookup_table, s, tau, candidates);
+        find_candidates(query_minimizers, query_length, lookup_table, s, candidates);
 
         // second stage -> estimate identity for alignments
         compute_estimates(ref_minimizers, position_table, query_minimizers, query_length, candidates, s, tau,
@@ -477,14 +476,14 @@ namespace mapper {
                                           std::vector<winnowing::minimizer> &ref_minimizers,
                                           std::unordered_map<winnowing::minhash_t, std::vector<std::uint32_t >> &lookup_table,
                                           std::unordered_map<uint32_t, winnowing::minimizer> &position_table,
-                                          double tau) {
+                                          double tau, int w, int k) {
         std::vector<mapper::estimate> estimates;
         mapper::map_fragment(Q + offset,
                              fragment_length,
                              ref_minimizers,
                              lookup_table,
                              position_table,
-                             tau,
+                             tau, w, k,
                              estimates);
 
         std::vector<Mapping> mappings;
@@ -632,8 +631,8 @@ namespace mapper {
         std::vector<winnowing::minimizer> ref_minimizers;
         std::unordered_map<winnowing::minhash_t, std::vector<std::uint32_t >> lookup_table;
         std::unordered_map<uint32_t, winnowing::minimizer> position_table;
-        auto k = config::constants::default_k;
-        auto w = statistics::calculate_window_size(k, config::constants::default_segment_length, r_length);
+        int k = config::constants::default_k;
+        int w = statistics::calculate_window_size(k, config::constants::default_segment_length, r_length);
         winnowing::index_sequence(R, r_length, w, k, ref_minimizers, lookup_table, position_table);
 
         // map each of the l0/2 fragments of the query
@@ -655,7 +654,7 @@ namespace mapper {
                             std::ref(ref_minimizers),
                             std::ref(lookup_table),
                             std::ref(position_table),
-                            tau));
+                            tau, w, k));
         }
 
         // check if we have one last fragment left
@@ -669,7 +668,7 @@ namespace mapper {
                             std::ref(ref_minimizers),
                             std::ref(lookup_table),
                             std::ref(position_table),
-                            tau));
+                            tau, w, k ));
         }
 
         int counter = 0;

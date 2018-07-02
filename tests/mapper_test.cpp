@@ -121,16 +121,16 @@ namespace winnowing {
 
     TEST(InsertIntoMap, WorkingProperly) {
         std::vector<winnowing::minimizer> minimizers = {
-                winnowing::minimizer {hash: 1, index: 34, strand: 1},
-                winnowing::minimizer {hash: 2, index: 56, strand: 1},
-                winnowing::minimizer {hash: 3, index: 78, strand: 1},
-                winnowing::minimizer {hash: 4, index: 93, strand: 1},
-                winnowing::minimizer {hash: 5, index: 123, strand: 1},
-                winnowing::minimizer {hash: 6, index: 156, strand: 1},
-                winnowing::minimizer {hash: 7, index: 167, strand: 1},
-                winnowing::minimizer {hash: 8, index: 169, strand: 1},
-                winnowing::minimizer {hash: 8, index: 171, strand: 1},
-                winnowing::minimizer {hash: 9, index: 185, strand: 1},
+                winnowing::minimizer {hash: 1, index: 34, real_index: 34, strand: 1},
+                winnowing::minimizer {hash: 2, index: 56, real_index: 56, strand: 1},
+                winnowing::minimizer {hash: 3, index: 78, real_index: 78, strand: 1},
+                winnowing::minimizer {hash: 4, index: 93, real_index: 93, strand: 1},
+                winnowing::minimizer {hash: 5, index: 123, real_index: 123, strand: 1},
+                winnowing::minimizer {hash: 6, index: 156, real_index: 156, strand: 1},
+                winnowing::minimizer {hash: 7, index: 167, real_index: 167, strand: 1},
+                winnowing::minimizer {hash: 8, index: 169, real_index: 169, strand: 1},
+                winnowing::minimizer {hash: 8, index: 171, real_index: 171, strand: 1},
+                winnowing::minimizer {hash: 9, index: 185, real_index: 185, strand: 1},
         };
 
         std::map<winnowing::minhash_t, matchInfo> L;
@@ -150,16 +150,16 @@ namespace winnowing {
 
     TEST(RemoveFromMap, WorkingProperly) {
         std::vector<winnowing::minimizer> minimizers;
-        minimizers.emplace_back(winnowing::minimizer {hash: 1, index: 34, strand: 1});
-        minimizers.emplace_back(winnowing::minimizer {hash: 2, index: 56, strand: 1});
-        minimizers.emplace_back(winnowing::minimizer {hash: 3, index: 78, strand: 1});
-        minimizers.emplace_back(winnowing::minimizer {hash: 4, index: 93, strand: 1});
-        minimizers.emplace_back(winnowing::minimizer {hash: 5, index: 123, strand: 1});
-        minimizers.emplace_back(winnowing::minimizer {hash: 6, index: 156, strand: 1});
-        minimizers.emplace_back(winnowing::minimizer {hash: 7, index: 167, strand: 1});
-        minimizers.emplace_back(winnowing::minimizer {hash: 8, index: 169, strand: 1});
-        minimizers.emplace_back(winnowing::minimizer {hash: 8, index: 171, strand: 1});
-        minimizers.emplace_back(winnowing::minimizer {hash: 9, index: 185, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 1, index: 34, real_index: 34, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 2, index: 56, real_index: 56, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 3, index: 78, real_index: 78, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 4, index: 93, real_index: 93, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 5, index: 123, real_index: 123, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 6, index: 156, real_index: 156, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 7, index: 167, real_index: 167, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 8, index: 169, real_index: 169, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 8, index: 171, real_index: 171, strand: 1});
+        minimizers.emplace_back(winnowing::minimizer {hash: 9, index: 185, real_index: 185, strand: 1});
 
         std::map<winnowing::minhash_t, matchInfo> L;
         insert_into_map(75, 170, L, minimizers);

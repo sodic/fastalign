@@ -4,7 +4,7 @@
 #include <Sweeper/Sweeper.h>
 #include "gtest/gtest.h"
 
-#include "winnowing.hpp"
+#include "winnowing_dac/winnowing.hpp"
 
 using namespace std;
 

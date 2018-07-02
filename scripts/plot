@@ -1,0 +1,1 @@
+scripts/generateDotPlot png large outptut.paf && xdg-open out.png

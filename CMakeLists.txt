@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.5)
 project(zavrsni)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -51,5 +51,5 @@ add_subdirectory(tests)
 
 
 set(SOURCE_FILES src/main.cpp)
-add_executable(zavrsni ${SOURCE_FILES})
-target_link_libraries(zavrsni mapper bioparser statistics config winnowing FASTARead)
+add_executable(fastalign ${SOURCE_FILES})
+target_link_libraries(fastalign mapper bioparser statistics config winnowing FASTARead)
